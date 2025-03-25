@@ -1,0 +1,4 @@
+echo "streamlit
+geopandas
+matplotlib
+mapclassify"
