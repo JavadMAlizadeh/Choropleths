@@ -1,4 +1,4 @@
-echo "streamlit
+streamlit
 geopandas
 matplotlib
-mapclassify"
+mapclassify
