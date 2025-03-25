@@ -15,7 +15,6 @@ import pathlib
 
 # Get the current directory where the script is located
 CURRENT_DIR = pathlib.Path(__file__).parent.absolute()
-DATA_DIR = os.path.join(CURRENT_DIR, "data")
 
 # Initialize session state for persistent data
 if 'csv_data' not in st.session_state:
@@ -49,10 +48,11 @@ color_options = [
 # Function to load built-in shapefile from data directory
 @st.cache_data
 def get_builtin_shapefile(shapefile_option):
+    # Updated paths directly to the repository root
     shapefile_paths = {
-        "US ZCTA 2024": os.path.join(DATA_DIR, "tl_2024_us_zcta520", "tl_2024_us_zcta520.shp"),
-        "US State Boundaries": os.path.join(DATA_DIR, "us-state-boundaries", "us-state-boundaries.shp"),
-        "World Administrative Boundaries": os.path.join(DATA_DIR, "world-administrative-boundaries", "world-administrative-boundaries.shp")
+        "US ZCTA 2024": os.path.join(CURRENT_DIR, "tl_2024_us_zcta520.shp"),
+        "US State Boundaries": os.path.join(CURRENT_DIR, "us-state-boundaries.shp"),
+        "World Administrative Boundaries": os.path.join(CURRENT_DIR, "world-administrative-boundaries.shp")
     }
 
     shapefile_path = shapefile_paths.get(shapefile_option)
@@ -75,7 +75,7 @@ def get_builtin_shapefile(shapefile_option):
 # Load state shapefile for use as a background in ZCTA maps
 @st.cache_data
 def get_state_boundaries():
-    shapefile_path = os.path.join(DATA_DIR, "us-state-boundaries", "us-state-boundaries.shp")
+    shapefile_path = os.path.join(CURRENT_DIR, "us-state-boundaries.shp")
     try:
         if os.path.exists(shapefile_path):
             state_gdf = gpd.read_file(shapefile_path)
