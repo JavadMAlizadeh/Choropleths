@@ -11,10 +11,6 @@ import numpy as np
 from matplotlib.cm import get_cmap
 import base64
 from io import BytesIO
-import pathlib
-
-# Get the current directory where the script is located
-CURRENT_DIR = pathlib.Path(__file__).parent.absolute()
 
 # Initialize session state for persistent data
 if 'csv_data' not in st.session_state:
@@ -33,7 +29,7 @@ if 'geography_level' not in st.session_state:
 # Set page configuration
 st.set_page_config(
     page_title="Choropleth Map Generator",
-    layout="wide"
+    layout="centered"
 )
 
 # Define color options
@@ -45,14 +41,13 @@ color_options = [
 ]
 
 
-# Function to load built-in shapefile from data directory
+# Function to load built-in shapefile from local path
 @st.cache_data
 def get_builtin_shapefile(shapefile_option):
-    # Updated paths directly to the repository root
     shapefile_paths = {
-        "US ZCTA 2024": os.path.join(CURRENT_DIR, "tl_2024_us_zcta520.shp"),
-        "US State Boundaries": os.path.join(CURRENT_DIR, "us-state-boundaries.shp"),
-        "World Administrative Boundaries": os.path.join(CURRENT_DIR, "world-administrative-boundaries.shp")
+        "US ZCTA 2024": "tl_2024_us_zcta520.shp",
+        "US State Boundaries": "us-state-boundaries.shp",
+        "World Administrative Boundaries": "world-administrative-boundaries.shp"
     }
 
     shapefile_path = shapefile_paths.get(shapefile_option)
@@ -75,7 +70,7 @@ def get_builtin_shapefile(shapefile_option):
 # Load state shapefile for use as a background in ZCTA maps
 @st.cache_data
 def get_state_boundaries():
-    shapefile_path = os.path.join(CURRENT_DIR, "us-state-boundaries.shp")
+    shapefile_path = "us-state-boundaries.shp"
     try:
         if os.path.exists(shapefile_path):
             state_gdf = gpd.read_file(shapefile_path)
@@ -221,6 +216,10 @@ def generate_choropleth_map(df, shp_gdf, selected_column, min_value, max_value, 
             # Add MousePosition to show coordinates on hover
             MousePosition().add_to(choropleth_map)
 
+            # Calculate number of bins based on min, max and step values
+            num_bins = int((max_value - min_value) / step_value) + 1
+            threshold_scale = np.linspace(min_value, max_value, num_bins).tolist()
+
             # Create choropleth with standard options
             choropleth = folium.Choropleth(
                 geo_data=merged_df.to_json(),
@@ -233,7 +232,8 @@ def generate_choropleth_map(df, shp_gdf, selected_column, min_value, max_value, 
                 line_opacity=0.2,
                 legend_name=custom_legend_name,
                 highlight=True,
-                overlay=True
+                overlay=True,
+                bins=threshold_scale
             ).add_to(choropleth_map)
 
             # Add hover tooltips for all geographic areas (even those without data)
@@ -405,7 +405,6 @@ def select_color(color_name):
 
 # Streamlit app layout
 st.title("Choropleth Map Generator")
-st.subheader("Create ZCTA, State, or Country Level Maps")
 
 # Selection for geographic level
 geography_level = st.radio(
@@ -421,7 +420,7 @@ st.session_state.geography_level = geography_level
 
 # Display guidance based on geography level
 if st.session_state.geography_level == "ZCTA":
-    st.info("For ZCTA level, your CSV should have a 'ZCTA' column with ZIP codes.")
+    st.info("For ZCTA level, your CSV should have a 'ZCTA' column.")
 elif st.session_state.geography_level == "STATE":
     st.info("For STATE level, your CSV should have a 'geoid' column matching the state geoid values in the shapefile.")
 else:  # COUNTRY level
@@ -448,7 +447,8 @@ if csv_file is not None:
                 id_column = 'ISO 3 country code'
 
             if id_column in df.columns:
-                df[id_column] = df[id_column].astype(str)
+                # Convert to int first (to remove decimals), then to string
+                df[id_column] = df[id_column].astype('Int64').astype(str)
 
             st.session_state.csv_data = df
             st.session_state.last_uploaded_file = csv_file.name
@@ -865,7 +865,7 @@ with st.expander("How to Use This App"):
 
     1. **Select Geographic Level**:
        - Choose between ZCTA (ZIP Code Tabulation Areas), STATE, or COUNTRY level mapping
-       - For ZCTA level, your CSV must have a 'ZCTA' column with ZIP codes
+       - For ZCTA level, your CSV must have a 'ZCTA' column
        - For STATE level, your CSV must have a 'geoid' column with state identifiers
        - For COUNTRY level, your CSV must have an 'ISO 3 country code' column matching ISO3 codes
 
@@ -899,7 +899,7 @@ with st.expander("How to Use This App"):
     ### Data Requirements:
 
     - **For ZCTA Level**:
-      - Your CSV file should have a 'ZCTA' column with ZIP codes
+      - Your CSV file should have a 'ZCTA' column
       - Built-in shapefile contains 'ZCTA5CE20' column for joining
       - If using your own shapefile, it should contain a 'ZCTA5CE20' or 'ZCTA5CE10' column
 
