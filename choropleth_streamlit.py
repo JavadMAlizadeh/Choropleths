@@ -521,37 +521,7 @@ if shapefile_source == "Built-in":
 
             if shp_gdf is not None:
                 st.success(f"{shapefile_option} shapefile loaded successfully")
-
-                # Add scrollable preview of complete shapefile data (editable)
-                st.write("Shapefile Data Preview:")
-                edited_shp_df = st.data_editor(
-                    shp_gdf.drop(columns=['geometry']),
-                    num_rows="dynamic",
-                    height=400,
-                    use_container_width=True,
-                    disabled=False,
-                    key="builtin_shapefile_editor"
-                )
-
-                # Add a download button for the edited shapefile data
-                if not edited_shp_df.equals(shp_gdf.drop(columns=['geometry'])):
-                    st.info(
-                        "You've made changes to the shapefile data. Use the button below to download the edited version.")
-
-                    # Convert the edited DataFrame to CSV
-                    edited_shp_csv = edited_shp_df.to_csv(index=False)
-
-                    # Create a download button for the edited CSV
-                    st.download_button(
-                        label="Download Edited Shapefile Data",
-                        data=edited_shp_csv,
-                        file_name="edited_shapefile_data.csv",
-                        mime="text/csv"
-                    )
-
-                    # Show a note that original data is still used
-                    st.caption(
-                        "Note: The map will be generated using the original shapefile data, not the edited version.")
+                st.info(f"Shapefile contains {len(shp_gdf)} geographic features")
 else:
     st.subheader("Upload Shapefile")
     shp_file = st.file_uploader("Choose a Shapefile", type="shp", help="Select a Shapefile containing boundaries")
@@ -580,37 +550,7 @@ else:
                     # Read the shapefile
                     shp_gdf = gpd.read_file(temp_shapefile_path)
                     st.success("Shapefile uploaded successfully")
-
-                    # Add scrollable preview of complete shapefile data (editable)
-                    st.write("Shapefile Data Preview (editable):")
-                    edited_shp_df = st.data_editor(
-                        shp_gdf.drop(columns=['geometry']),
-                        num_rows="dynamic",
-                        height=400,
-                        use_container_width=True,
-                        disabled=False,
-                        key="uploaded_shapefile_editor"
-                    )
-
-                    # Add a download button for the edited shapefile data
-                    if not edited_shp_df.equals(shp_gdf.drop(columns=['geometry'])):
-                        st.info(
-                            "You've made changes to the shapefile data. Use the button below to download the edited version.")
-
-                        # Convert the edited DataFrame to CSV
-                        edited_shp_csv = edited_shp_df.to_csv(index=False)
-
-                        # Create a download button for the edited CSV
-                        st.download_button(
-                            label="Download Edited Shapefile Data",
-                            data=edited_shp_csv,
-                            file_name="edited_shapefile_data.csv",
-                            mime="text/csv"
-                        )
-
-                        # Show a note that original data is still used
-                        st.caption(
-                            "Note: The map will be generated using the original shapefile data, not the edited version.")
+                    st.info(f"Shapefile contains {len(shp_gdf)} geographic features")
 
                     # Check for appropriate ID columns based on geography level
                     if st.session_state.geography_level == "ZCTA":
