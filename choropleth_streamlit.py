@@ -45,7 +45,7 @@ color_options = [
 @st.cache_data
 def get_builtin_shapefile(shapefile_option):
     shapefile_paths = {
-        "US ZCTA 2024": "https://github.com/JavadMAlizadeh/Choropleths/blob/79ce1d5150cdcfd24a56d42a2705343797ec8f10/tl_2024_us_zcta520.shx",
+        "US ZCTA 2024": "https://github.com/JavadMAlizadeh/Choropleths/blob/79ce1d5150cdcfd24a56d42a2705343797ec8f10/tl_2024_us_zcta520.shp",
         "US State Boundaries": "https://github.com/JavadMAlizadeh/Choropleths/blob/79ce1d5150cdcfd24a56d42a2705343797ec8f10/us-state-boundaries.shp",
         "World Administrative Boundaries": "https://github.com/JavadMAlizadeh/Choropleths/blob/79ce1d5150cdcfd24a56d42a2705343797ec8f10/world-administrative-boundaries.shp"
     }
