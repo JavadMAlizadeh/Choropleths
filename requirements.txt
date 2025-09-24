@@ -4,6 +4,3 @@ matplotlib
 mapclassify
 folium
 streamlit-folium
-gdal-bin
-libgdal-dev
-python3-gdal
