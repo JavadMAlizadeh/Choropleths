@@ -45,9 +45,9 @@ color_options = [
 @st.cache_data
 def get_builtin_shapefile(shapefile_option):
     shapefile_paths = {
-        "US ZCTA 2024": "tl_2024_us_zcta520.shp",
-        "US State Boundaries": "us-state-boundaries.shp",
-        "World Administrative Boundaries": "world-administrative-boundaries.shp"
+        "US ZCTA 2024": "https://github.com/JavadMAlizadeh/Choropleths/blob/79ce1d5150cdcfd24a56d42a2705343797ec8f10/tl_2024_us_zcta520.shx",
+        "US State Boundaries": "https://github.com/JavadMAlizadeh/Choropleths/blob/79ce1d5150cdcfd24a56d42a2705343797ec8f10/us-state-boundaries.shp",
+        "World Administrative Boundaries": "https://github.com/JavadMAlizadeh/Choropleths/blob/79ce1d5150cdcfd24a56d42a2705343797ec8f10/world-administrative-boundaries.shp"
     }
 
     shapefile_path = shapefile_paths.get(shapefile_option)
@@ -70,7 +70,7 @@ def get_builtin_shapefile(shapefile_option):
 # Load state shapefile for use as a background in ZCTA maps
 @st.cache_data
 def get_state_boundaries():
-    shapefile_path = "us-state-boundaries.shp"
+    shapefile_path = "https://github.com/JavadMAlizadeh/Choropleths/blob/79ce1d5150cdcfd24a56d42a2705343797ec8f10/us-state-boundaries.shp"
     try:
         if os.path.exists(shapefile_path):
             state_gdf = gpd.read_file(shapefile_path)
