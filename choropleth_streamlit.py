@@ -41,128 +41,44 @@ color_options = [
 ]
 
 
-# Function to load built-in shapefile from URL
+# Function to load built-in shapefile from local path
 @st.cache_data
 def get_builtin_shapefile(shapefile_option):
-    # Use raw GitHub URLs that can be directly downloaded
     shapefile_paths = {
-        "US ZCTA 2024": "https://raw.githubusercontent.com/JavadMAlizadeh/Choropleths/cf2624d6ac593bc58c8af2d3e1f103bf8d6092ee/tl_2024_us_zcta520.shp",
-        "US State Boundaries": "https://raw.githubusercontent.com/JavadMAlizadeh/Choropleths/79ce1d5150cdcfd24a56d42a2705343797ec8f10/us-state-boundaries.shp",
-        "World Administrative Boundaries": "https://raw.githubusercontent.com/JavadMAlizadeh/Choropleths/79ce1d5150cdcfd24a56d42a2705343797ec8f10/world-administrative-boundaries.shp"
+        "US ZCTA 2024": "tl_2024_us_zcta520.shp",
+        "US State Boundaries": "us-state-boundaries.shp",
+        "World Administrative Boundaries": "world-administrative-boundaries.shp"
     }
 
-    shapefile_url = shapefile_paths.get(shapefile_option)
-    if not shapefile_url:
+    shapefile_path = shapefile_paths.get(shapefile_option)
+    if not shapefile_path:
         return None
 
     try:
-        # For GitHub URLs, we need to also get the supporting files
-        # Get the base URL without the .shp extension
-        base_url = shapefile_url.rsplit('.shp', 1)[0]
-        
-        # Create a temporary directory to store all shapefile components
-        temp_dir = tempfile.mkdtemp()
-        
-        # Download all required shapefile components
-        import urllib.request
-        import urllib.error
-        
-        extensions = ['.shp', '.shx', '.dbf', '.prj', '.cpg']
-        downloaded_files = []
-        
-        for ext in extensions:
-            try:
-                file_url = base_url + ext
-                local_path = os.path.join(temp_dir, f"shapefile{ext}")
-                urllib.request.urlretrieve(file_url, local_path)
-                downloaded_files.append(local_path)
-            except urllib.error.URLError:
-                # Some files might not exist, that's okay
-                continue
-        
-        # Try to read the shapefile if we have at least .shp, .shx, and .dbf
-        shp_path = os.path.join(temp_dir, "shapefile.shp")
-        if os.path.exists(shp_path):
-            shp_gdf = gpd.read_file(shp_path)
+        # Load the shapefile from the specified path
+        if os.path.exists(shapefile_path):
+            shp_gdf = gpd.read_file(shapefile_path)
             return shp_gdf
         else:
-            st.error(f"Could not download required shapefile components for {shapefile_option}")
+            st.error(f"Shapefile not found at: {shapefile_path}")
             return None
-            
     except Exception as e:
         st.error(f"Error loading built-in shapefile: {str(e)}")
-        # Try alternative approach - load from a different source or use a backup
-        st.info("Attempting to load from alternative source...")
-        return load_alternative_shapefile(shapefile_option)
-
-
-# Alternative shapefile loading function
-@st.cache_data
-def load_alternative_shapefile(shapefile_option):
-    """Load shapefiles from alternative sources when GitHub fails"""
-    try:
-        if shapefile_option == "US ZCTA 2024":
-            # Try loading from a publicly available source
-            # Note: You'll need to replace this with an actual working URL
-            st.warning("Using simplified ZCTA boundaries. For full resolution, please upload your own shapefile.")
-            # For demo purposes, create a simple placeholder
-            return None
-            
-        elif shapefile_option == "US State Boundaries":
-            # Load from naturalearth data (this works reliably)
-            url = "https://raw.githubusercontent.com/holtzy/The-Python-Graph-Gallery/master/static/data/US-states.geojson"
-            import urllib.request
-            import json
-            
-            with urllib.request.urlopen(url) as response:
-                geojson_data = json.loads(response.read())
-            
-            # Convert to GeoDataFrame
-            shp_gdf = gpd.GeoDataFrame.from_features(geojson_data['features'])
-            
-            # Add a 'geoid' column if it doesn't exist
-            if 'geoid' not in shp_gdf.columns and 'id' in shp_gdf.columns:
-                shp_gdf['geoid'] = shp_gdf['id']
-            
-            return shp_gdf
-            
-        elif shapefile_option == "World Administrative Boundaries":
-            # Load from naturalearth data
-            url = "https://raw.githubusercontent.com/holtzy/The-Python-Graph-Gallery/master/static/data/world-110m.geojson"
-            import urllib.request
-            import json
-            
-            with urllib.request.urlopen(url) as response:
-                geojson_data = json.loads(response.read())
-            
-            # Convert to GeoDataFrame
-            shp_gdf = gpd.GeoDataFrame.from_features(geojson_data['features'])
-            
-            # Add 'iso3' column if it doesn't exist
-            if 'iso3' not in shp_gdf.columns:
-                # Try to map from existing columns
-                if 'ADM0_A3' in shp_gdf.columns:
-                    shp_gdf['iso3'] = shp_gdf['ADM0_A3']
-                elif 'ISO_A3' in shp_gdf.columns:
-                    shp_gdf['iso3'] = shp_gdf['ISO_A3']
-            
-            # Add 'english' column for country names
-            if 'english' not in shp_gdf.columns and 'NAME' in shp_gdf.columns:
-                shp_gdf['english'] = shp_gdf['NAME']
-            
-            return shp_gdf
-            
-    except Exception as e:
-        st.error(f"Error loading alternative shapefile: {str(e)}")
         return None
 
 
 # Load state shapefile for use as a background in ZCTA maps
 @st.cache_data
 def get_state_boundaries():
+    shapefile_path = "us-state-boundaries.shp"
     try:
-        # Use the same alternative loading approach
-        return load_alternative_shapefile("US State Boundaries")
+        if os.path.exists(shapefile_path):
+            state_gdf = gpd.read_file(shapefile_path)
+            # Simplify geometry to reduce file size
+            state_gdf['geometry'] = state_gdf['geometry'].simplify(tolerance=0.01)
+            return state_gdf
+        else:
+            return None
     except Exception:
         return None
 
@@ -489,6 +405,7 @@ def select_color(color_name):
 
 # Streamlit app layout
 st.title("Choropleth Map Generator")
+st.subheader("Create ZCTA, State, or Country Level Maps")
 
 # Selection for geographic level
 geography_level = st.radio(
@@ -587,7 +504,7 @@ if shapefile_source == "Built-in":
             ["US State Boundaries"]
         )
         st.markdown("""
-        Source: [Natural Earth Data via GitHub](https://github.com/holtzy/The-Python-Graph-Gallery)
+        Source: [OpenDataSoft - US State Boundaries](https://public.opendatasoft.com/explore/dataset/us-state-boundaries/export/?flg=en-us)
         """)
     else:  # COUNTRY level
         shapefile_option = st.selectbox(
@@ -595,7 +512,7 @@ if shapefile_source == "Built-in":
             ["World Administrative Boundaries"]
         )
         st.markdown("""
-        Source: [Natural Earth Data via GitHub](https://github.com/holtzy/The-Python-Graph-Gallery)
+        Source: [OpenDataSoft - World Administrative Boundaries](https://public.opendatasoft.com/explore/dataset/world-administrative-boundaries/information/?flg=en-us)
         """)
 
     if shapefile_option:
@@ -635,8 +552,6 @@ if shapefile_source == "Built-in":
                     # Show a note that original data is still used
                     st.caption(
                         "Note: The map will be generated using the original shapefile data, not the edited version.")
-            else:
-                st.error(f"Failed to load {shapefile_option} shapefile. Please try uploading your own shapefile or check your internet connection.")
 else:
     st.subheader("Upload Shapefile")
     shp_file = st.file_uploader("Choose a Shapefile", type="shp", help="Select a Shapefile containing boundaries")
@@ -961,9 +876,9 @@ with st.expander("How to Use This App"):
 
     3. **Shapefile Options**:
        - **Built-in**: 
-         - For ZCTA: Use the pre-loaded US ZCTA 2024 shapefile (requires internet connection)
-         - For STATE: Use the pre-loaded US State Boundaries shapefile from Natural Earth
-         - For COUNTRY: Use the pre-loaded World Administrative Boundaries shapefile from Natural Earth
+         - For ZCTA: Use the pre-loaded US ZCTA 2024 shapefile
+         - For STATE: Use the pre-loaded US State Boundaries shapefile
+         - For COUNTRY: Use the pre-loaded World Administrative Boundaries shapefile
        - **Upload your own**: Upload a Shapefile (.shp) and its components (.dbf, .shx, .prj) containing required boundaries
 
     4. **Edit Data**:
@@ -998,12 +913,6 @@ with st.expander("How to Use This App"):
       - Your CSV file should have an 'ISO 3 country code' column with ISO3 country codes
       - Built-in shapefile contains 'iso3' column and 'english' (country name) column
       - If using your own shapefile, it should contain 'iso3', 'ISO_A3', or similar ISO country code column
-
-    ### Troubleshooting:
-
-    - **Shapefile loading fails**: Check your internet connection or try uploading your own shapefiles
-    - **No data appears on map**: Verify that your CSV column values match the shapefile identifiers
-    - **Map generation errors**: Ensure your data column contains numeric values
     """)
 
 # Footer
